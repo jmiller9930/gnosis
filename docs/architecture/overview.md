@@ -177,16 +177,6 @@ Implementation order is flexible (engine → persistence → public API); the go
 
 ---
 
-## Phased rollout (when to add what)
-
-1. Engine + one DB + synchronous API — correctness and contracts first.  
-2. Hybrid retrieval (filters + vectors) — when filters alone are thin.  
-3. Async indexing + queues — when ingest cost hurts latency.  
-4. Partitioning / sharding — when single DB or region limits you.  
-5. Aggressive caching — when hot patterns are clear and safe.
-
----
-
 ## Bounded context (anti-bloat)
 
 Long prompts do not equal reliable memory. GNOSIS outputs **bounded** packets (canonical cap), uses **STM/LTM** rules, caps **candidates** and **graph** depth, and uses **three horizons**. Retrieval is **applicability-gated**, not “fill the window with top‑*k* chunks.” Infra adds speed—not an excuse to bloat prompts.
@@ -207,6 +197,8 @@ Long prompts do not equal reliable memory. GNOSIS outputs **bounded** packets (c
 
 **Goal:** The same **container images** move from development to a **test lab** with **environment and secrets** differences—not different install steps on the host.
 
+**Portable application:** GNOSIS is meant to run as a **portable stack**: **images + Compose + `.env`**. The same artifacts run on a dev machine, CI, or a lab host **without** per-host installs of Python, Postgres, or app code—the host only needs a container runtime (and, for real runs, secrets and port choices). No bespoke “only works on server X” install path is the target.
+
 | Piece | Role |
 |-------|------|
 | **Language** | Python **3.11+** ([`pyproject.toml`](../../pyproject.toml)); the engine is a **package** under `src/gnosis/`. |
@@ -221,15 +213,32 @@ Long prompts do not equal reliable memory. GNOSIS outputs **bounded** packets (c
 
 **GPU / local LLM:** If a model needs a GPU, treat it as a **separate** service or host attach when Compose cannot satisfy it; keep GNOSIS and data services **containerized** where possible.
 
-**Remote server (shared host):** Carve out a **dedicated tree** so GNOSIS does not mix with other projects—example:
+---
+
+## Could (pending review — not a committed rollout)
+
+Nothing here is **normative** until the team reviews and adopts it. This is **structural could**—examples and ordering ideas—not a promise of schedule, environment, or go-live.
+
+### Structural rollout and lab placement (example only)
+
+When you **do** place GNOSIS on a shared host, a **dedicated directory** keeps it separate from other projects—**illustrative** layout:
 
 ```text
-~/gnosis/
-  gnosis/              # git clone (repo root: Dockerfile, docker-compose.yml, …)
-    .env               # copy from .env.example here; never commit
+~/server/Gnosis/       # example: git clone root (Dockerfile, docker-compose.yml, …)
+  .env                 # from .env.example; never commit
 ```
 
-On the server: `cd ~/gnosis/gnosis`, then `docker compose build && docker compose up -d` (same Compose files as dev). Other stacks stay outside `~/gnosis/`.
+**Illustrative** workflow: `cd` there, `git pull`, `docker compose build && docker compose up -d`. Paths, hostnames, and promotion steps stay **open** until reviewed.
+
+### Phased capability expansion (suggested order, not a timeline)
+
+**Not** a product rollout calendar—only **when** you might add **capabilities** to the stack as needs appear:
+
+1. Engine + one DB + synchronous API — correctness and contracts first.  
+2. Hybrid retrieval (filters + vectors) — when filters alone are thin.  
+3. Async indexing + queues — when ingest cost hurts latency.  
+4. Partitioning / sharding — when single DB or region limits you.  
+5. Aggressive caching — when hot patterns are clear and safe.
 
 ---
 
