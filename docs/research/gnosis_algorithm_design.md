@@ -86,6 +86,36 @@ Each \(m \in \mathcal{M}\) is associated with at least:
 - \(E(m \mid s,a,\mathcal{P}) \in [0,1]\) or \(\{\textsf{true},\textsf{false}\}\): **eligibility** (defined in §5).  
 - \(S(m,q) \in \mathbb{R}\): **relevance** or similarity score (e.g. cosine similarity in embedding space).
 
+### 3.5 Worked example (Step 2 — inputs/outputs anchored to one query)
+
+**User query (natural language):** *“What are good Paris restaurants in the summer?”*
+
+This subsection **instantiates** §3.1–3.3 only—no algorithm steps beyond naming **what** is input and **what** is output for this single run.
+
+| Object | **Instantiation for this example** |
+|--------|-----------------------------------|
+| \(q\) | Information need: **recommendations for dining in Paris**, **season = summer** (may be decomposed later into sub-queries, e.g. neighborhood × cuisine—decomposition is §4, not required here). |
+| \(s\) | **Situation:** e.g. `geo=Paris`, `topic=food/restaurants`, `season_window=summer` (Northern Hemisphere June–August unless user locale says otherwise), `language`, **active relationship context** (solo vs “with Bill” if relevant), **conversation id**. |
+| \(a\) | **Requesting agent** (and **user** if distinct): e.g. *Anna’s* assistant—defines **which partition** of \(\mathcal{M}\) is readable first. |
+| \(\mathcal{M}\) | All **stored memories** the system could ever see (corpus)—**not** what we retrieve yet. |
+| \(\mathcal{P}\) | **Policy:** isolation (Anna vs Bill), **visibility**, **relationship tiers** for shared memory, rules for **geo/time validity**, retention. |
+| \(B\) | **Budget:** max tokens or max chunks for \(\mathcal{O}\). |
+
+**Memory items \(m\)** (illustrative fields—each real \(m\) carries structured metadata):
+
+- \(m_A\): Anna’s past note, tagged `city=Paris`, `class=restaurant`, `season_relevant=summer`, `owner=Anna`.  
+- \(m_B\): Semantically “restaurant + summer” but **Lyon** or **wrong season**—must fail **eligibility** if \(s\) requires Paris + summer.  
+- \(m_C\): Strong text match but **Bill-only** visibility—**excluded** for Anna-only \(a\) unless \(\mathcal{P}\) and relationship tier allow.
+
+**Outputs for this run:**
+
+| Output | **Meaning in the example** |
+|--------|------------------------------|
+| \(\mathcal{O}\) | **Bounded** set of memories that passed **isolation + eligibility** and fit **budget**—e.g. \(\{m_A, \ldots\}\), **not** \(m_B\) or \(m_C\) if rules exclude them. |
+| \(\omega\) | **SUFF** if support is enough to ground “good options”; **INSUFF** if \(\mathcal{O}\) is empty or below threshold (e.g. no grounded list in corpus—**honest** insufficient context). |
+
+**One line:** Step 2 is **only** “these are the formal objects”; the **Paris** row ties them to **one** concrete ask so the paper stays **grounded** without reopening product debates in this section.
+
 ---
 
 ## 4. Candidate GNOSIS Algorithm
