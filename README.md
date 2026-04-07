@@ -117,6 +117,8 @@ Test lab (same images, merged overrides): `docker compose -f docker-compose.yml 
 
 Optional cache: `docker compose --profile with-redis up -d` and set `REDIS_URL` in `.env` (see `.env.example`).
 
+**More capacity:** the architecture aims for **additional container instances** of the same image joining a **shared** DB (and queue when async work exists)—see [horizontal scale (processing nodes)](docs/architecture/overview.md#horizontal-scale-processing-nodes) in the overview.
+
 ## Design notes
 
 - Determinism is treated as a hard requirement.

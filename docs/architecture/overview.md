@@ -215,6 +215,10 @@ Long prompts do not equal reliable memory. GNOSIS outputs **bounded** packets (c
 
 **Exceptions (explicit only):** If something truly cannot run in a container (unusual GPU/driver limits, mandated external DB, org policy), document it as a **deliberate exception**—the default remains **all stack processes in containers**. A **local LLM** should still be a **containerized** sibling service when the runtime allows; avoid “run the model on the host, GNOSIS in Docker” unless you have no other option.
 
+### Horizontal scale (processing nodes)
+
+When the system needs **more horsepower**, the intended path is **easy to reason about**: **add another instance** of the same **container image** and have it **join the collective** (shared backing services)—**not** a one-off “install more stuff on this server” or a special second codebase. **Interchangeable** workers share **durable state and coordination** (at minimum the **database**; **queues** or similar when async work needs fan-out and backpressure). Process-local memory alone must not be the **source of truth** for anything that must survive or coordinate across nodes. How you **place** replicas (Compose `scale`, Swarm, Kubernetes, a cloud autoscaler, a load balancer in front of stateless API replicas) is **operations**; the **design** target is **N identical containers** wired to the **same** backing services so capacity is **additive**.
+
 ---
 
 ## Could (pending review — not a committed rollout)
