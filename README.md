@@ -104,6 +104,8 @@ pytest -q
 
 ### Docker (portable stack)
 
+**Intended model:** **nothing runs on the host** except the container runtime (and Compose)—**app, Postgres, and optional Redis are all in containers**; do not install Python or Postgres on the OS for real runs. Details: [Runtime and packaging — host boundary](docs/architecture/overview.md#runtime-and-packaging-docker-first).
+
 Everything that can run in Docker runs in Compose (app + Postgres; optional Redis profile). Copy `.env.example` to `.env`, then:
 
 ```bash

@@ -197,21 +197,23 @@ Long prompts do not equal reliable memory. GNOSIS outputs **bounded** packets (c
 
 **Goal:** The same **container images** move from development to a **test lab** with **environment and secrets** differences—not different install steps on the host.
 
-**Portable application:** GNOSIS is meant to run as a **portable stack**: **images + Compose + `.env`**. The same artifacts run on a dev machine, CI, or a lab host **without** per-host installs of Python, Postgres, or app code—the host only needs a container runtime (and, for real runs, secrets and port choices). No bespoke “only works on server X” install path is the target.
+**Host boundary (default):** **Nothing in the GNOSIS stack runs on the host OS** as a normal install—**no** host Python, **no** host Postgres, **no** host Redis, **no** running app or worker processes outside containers **if it can be avoided**. The host runs the **container engine** (and Compose), supplies **files** (compose YAML, `.env`, bind mounts for dev only), **port maps**, and **named volumes**. Real workloads—app, database, optional cache—live **inside** images. That is the intended operational model, not “install dependencies on the server and run `python` or `psql` there.”
+
+**Portable application:** The stack is **images + Compose + `.env`**. The same artifacts run on a dev machine, CI, or a lab host **without** per-host installs of Python, Postgres, or app code—the host only needs a container runtime (and, for real runs, secrets and port choices). No bespoke “only works on server X” install path is the target.
 
 | Piece | Role |
 |-------|------|
-| **Language** | Python **3.11+** ([`pyproject.toml`](../../pyproject.toml)); the engine is a **package** under `src/gnosis/`. |
+| **Language** | Python **3.11+** ([`pyproject.toml`](../../pyproject.toml)); the engine is a **package** under `src/gnosis/`—**built into the image**, not assumed on the host. |
 | **Application image** | [`Dockerfile`](../../Dockerfile) at repo root: slim base, `pip install` the package, **non-root** user (`uid 1000`), `HEALTHCHECK` via `python -c "import gnosis"`. **CMD** keeps the process alive until an ASGI server replaces it. |
 | **Compose stack** | [`docker-compose.yml`](../../docker-compose.yml): **`app`** (build) + **`db`** (Postgres 16) + named volume for data. Optional **`redis`** behind Compose **profile** `with-redis` (`docker compose --profile with-redis up`). **Principle:** everything that **can** run in Docker **does**—no “install Postgres on your laptop” for real runs. |
 | **Configuration** | [`.env.example`](../../.env.example) → copy to **`.env`** (gitignored): `DATABASE_URL`, Postgres vars, optional `REDIS_URL`. |
 | **Test lab** | [`docker-compose.lab.yml`](../../docker-compose.lab.yml): merge with `-f docker-compose.yml -f docker-compose.lab.yml` for resource hints and lab env; **inject secrets** from CI or a vault, not the image. |
 | **Local overrides** | Optional `docker-compose.override.yml` (gitignored): Compose merges it automatically—e.g. bind-mount `./src` for iterative work. Do not use override files in the lab image pipeline. |
-| **Host prerequisites** | Docker Engine + Compose v2. Optional: registry to **push/pull** tagged images into the lab. |
+| **Host prerequisites** | **Only** Docker Engine + Compose v2 (and OS/kernel). **Not** application runtimes or databases on the host. Optional: registry to **push/pull** tagged images into the lab. |
 
-**Smoke test:** `docker compose build` and `docker compose up -d`; `app` healthcheck passes; `db` healthy. **Exec:** `docker compose exec app python -c "import gnosis"`.
+**Smoke test:** `docker compose build` and `docker compose up -d`; `app` healthcheck passes; `db` healthy. **Exec:** `docker compose exec app python -c "import gnosis"`—**inside** the `app` container, not host Python.
 
-**GPU / local LLM:** If a model needs a GPU, treat it as a **separate** service or host attach when Compose cannot satisfy it; keep GNOSIS and data services **containerized** where possible.
+**Exceptions (explicit only):** If something truly cannot run in a container (unusual GPU/driver limits, mandated external DB, org policy), document it as a **deliberate exception**—the default remains **all stack processes in containers**. A **local LLM** should still be a **containerized** sibling service when the runtime allows; avoid “run the model on the host, GNOSIS in Docker” unless you have no other option.
 
 ---
 
