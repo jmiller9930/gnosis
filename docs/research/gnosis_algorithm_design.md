@@ -116,6 +116,41 @@ This subsection **instantiates** §3.1–3.3 only—no algorithm steps beyond na
 
 **One line:** Step 2 is **only** “these are the formal objects”; the **Paris** row ties them to **one** concrete ask so the paper stays **grounded** without reopening product debates in this section.
 
+### 3.6 Assumptions (premises of the model)
+
+In a research paper, **assumptions** are not hunches—they are **what we take as given** so the definitions and algorithm are **well-posed**. We have **not** “assumed away” hard work; we have **named** what must be true for this specification to apply.
+
+| ID | Assumption | Plain meaning |
+|----|------------|----------------|
+| **A1** | **Structured memory** | Each \(m\) can expose **enough** fields (tags, geo, time, visibility, owner) that **eligibility** \(E\) is **computable**. Missing metadata may make \(E\) conservative (reject) or route to **INSUFF**—behavior to be fixed in implementation, not left implicit. |
+| **A2** | **Policy available** | \(\mathcal{P}\) (isolation, relationship tiers, retention) is **known** at query time. If policy is missing, the procedure is **undefined** for production—**default deny** is a valid implementation rule. |
+| **A3** | **Finite budget** | \(B\) is **finite** (tokens, chunk count, or both)—unbounded context is **out of scope** for this formulation. |
+| **A4** | **Identity known** | The **requesting principal** \(a\) (and user, if distinct) is **fixed** for the turn so \(\mathcal{M}_a\) is well-defined. |
+| **A5** | **Similarity after gate** | \(S(m,q)\) is used **only** for \(m\) that passed **isolation** (and typically **eligibility**); we do **not** assume “similarity alone” is sound for admissibility. |
+| **A6** | **Decomposition optional** | Query splitting is **allowed** but **not assumed** optimal; wrong decomposition is an **operational risk**, modeled outside this core unless extended. |
+| **A7** | **Insufficiency legitimate** | \(\omega=\textsf{INSUFF}\) is a **valid** output—not a failure mode of the specification. |
+| **A8** | **Generator separate** | Downstream **answer generation** (LLM) is **not** specified here; this document ends at \((\mathcal{O},\omega)\) unless explicitly extended. |
+
+### 3.7 Scope, non-goals, and remaining gaps
+
+**In scope for this paper:** formal problem; inputs/outputs; composite algorithm; math skeleton; research mapping; counterexamples; claim types; evaluation plan; design decisions log; standard vs GNOSIS comparison.
+
+**Explicit non-goals (not answered here):**
+
+- **Exact** closed forms for \(E\) and sufficiency \(T\) beyond illustrations—**instantiation** is engineering / follow-on work.  
+- **Proof** of optimality or production **thresholds** \(\tau_E, \tau_T\).  
+- **Learning** relationship edges from raw chat—only **policy shape** (tiers) is fixed.  
+- **UI copy** for “insufficient context” vs **clarifying questions**—product, not core math.
+
+**Remaining gaps to close later (tracked in §9 and implementation):**
+
+| Gap | What is missing |
+|-----|-----------------|
+| **G1** | Calibrated **\(T(\mathcal{O},q,s)\)** and \(\tau_T\) for real deployments. |
+| **G2** | **Decomposition** trigger and error handling when splits are wrong. |
+| **G3** | **Empirical** comparison vs strong RAG baselines on **leakage**, **wrong-geo**, **abstention** quality. |
+| **G4** | **Relationship** graph storage vs **materialized** summaries—Decision 1 allows either. |
+
 ---
 
 ## 4. Candidate GNOSIS Algorithm
