@@ -73,6 +73,39 @@ GNOSIS answers: *what context from recorded history **legitimately** applies to 
 
 ---
 
+## Context stack (concepts, patterns, and where GNOSIS sits)
+
+**Context stack** means **everything required** so that a large, vague, or window-filling user/agent ask does **not** drown the system in tokens. The **driver** is **decomposition**: move from a **mega question** to a **refined situation** (scope, tags, objective, time window)—the same intuition as **human speech** (“what’s your name?” cues a **small** slice of memory, not an entire biography). **RLM-style** (recursive / staged LM) orchestration is **aligned** with that goal: **avoid one flat mega-context**; use **staged** or **decomposed** use of the model where appropriate. GNOSIS does **not** replace those foundations; it **sits on top of** standard retrieval and storage, adding **memory policy** (what may apply **here**).
+
+### What kind of “things” are in the stack?
+
+The stack mixes **four** kinds of elements—different readers mean “stack” at different layers:
+
+| Kind | What it is | Examples |
+|------|------------|----------|
+| **Concepts / principles** | Ideas and constraints—not vendor SKUs | Decomposition; **bounded** context; **situation-scoped** recall; token discipline; per-agent isolation as a safety property |
+| **Methodologies / patterns** | Repeatable ways of building pipelines—not one fixed product | **RAG-shaped** retrieval (retrieve, then use); hybrid lexical + dense search; **RLM-style** multi-step / non-flat use of an LLM; ingress shaping as a **process** |
+| **Algorithms / engine (GNOSIS)** | Deterministic logic implemented in this repo | Applicability-before-scoring, retrieval weighting, packet assembly, insufficiency—see [Module responsibilities](#module-responsibilities) and [Core flow](#core-flow) |
+| **Technologies** | Replaceable commodity components | PostgreSQL, pgvector or managed vector ANN, embedding APIs, Redis, queues, HTTP, containers, load balancers, observability—see [Build vs integrate](#build-vs-integrate) and [Typical infrastructure integrations](#typical-infrastructure-integrations-purpose) |
+
+**GNOSIS is primarily the third row** (engine + contract), plus the **service** that exposes ingest/query. It **embodies** the first row’s principles; it **uses** the second and fourth rows—it does **not** pretend vectors and SQL were invented here.
+
+### Bottom → top: where GNOSIS sits
+
+Read **up** the stack (foundation first, consumer last):
+
+| Position | Layer | Role |
+|----------|-------|------|
+| **Bottom** | **Technologies** | Durable store, vectors/embeddings when needed, queues/cache, runtime (containers), network, LB |
+| **Low / middle** | **Patterns** | RAG-shaped and hybrid **retrieval mechanics** inside a **narrowed** candidate set—not “similarity alone” as the top gate |
+| **Middle** | **Refinement / orchestration** | **Decomposition** (and optional RLM-style staging): mega ask → **refined situation** so prompts and reads stay **right-sized** |
+| **Upper (this product)** | **GNOSIS** | **Context triggering** + applicability + silos + **bounded** packets + **explicit insufficient context**—*what recorded memory may inform this refined situation?* |
+| **Top** | **Downstream consumer** | LLM / agent / tools consume **packets** or handle **insufficiency**—the model is **swappable**; the **qualification contract** stays in GNOSIS |
+
+**Summary:** The **context stack** is **not only** Docker and Postgres—it is the **full path** from **bloated ask → refined situation → qualified memory → bounded delivery**, with **decomposition** as the anti–token-drowning lever and **GNOSIS** as the **memory-qualification** layer **above** commodity retrieval and **below** the final model call.
+
+---
+
 ## Flagship differentiators (vs mainstream “memory”)
 
 GNOSIS leads with **eligibility, bounds, and structure**—not “vector similarity + longest prompt.”
