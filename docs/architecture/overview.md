@@ -62,6 +62,7 @@ This document focuses on systems that **directly influence an LLM or agent run**
 |------|--------|
 | **Default narrative home** | This file (`overview.md`). Extend it; do not spawn parallel overviews. |
 | **Allowed without exception** | [`README.md`](../../README.md) (entry), [`docs/specs/`](../specs/) (normative specs). |
+| **Research (paper-first)** | [`docs/research/gnosis_algorithm_design.md`](../research/gnosis_algorithm_design.md) — formal algorithm specification, problem definition, math, research mapping, evaluation blueprint (**before** implementation). |
 | **Rare separate doc** | Only when unavoidable (e.g. compliance pack). Create **one** focused file and **link it from here**—no orphans. |
 | **Everyone** | Prefer **editing** existing docs over creating new ones. |
 
