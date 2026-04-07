@@ -10,7 +10,7 @@
 
 GNOSIS is specified here as a **composite retrieval-and-decision procedure**: a **qualification layer** (eligibility, scope, isolation) applied **before** similarity-based ranking, followed by **bounded selection** under a finite context budget, **sufficiency** assessment, and an **answer vs abstain** outcome. The procedure is **not** claimed to exist as a single named algorithm in the literature; it is a **composition** of established ideas (multi-stage retrieval, selective prediction, constrained selection) plus an explicit **admissibility-first** ordering that matches the GNOSIS thesis.
 
-This document supplies: a **problem definition**, **formal inputs/outputs**, **assumptions**, an **ordered algorithm**, **mathematical formulation**, **research mapping**, **counterexamples**, **theorem-style claims** (with epistemic status), **open questions**, and an **evaluation blueprint**. The standard of completion is that a reviewer can judge **mathematical coherence**, **literary support** (not proof of novelty), and **what must be validated empirically** before implementation.
+This document supplies: a **problem definition**, **formal inputs/outputs**, **assumptions**, an **ordered algorithm**, **mathematical formulation**, **research mapping**, **counterexamples**, **theorem-style claims** (with epistemic status), **open questions**, an **evaluation blueprint**, and **§13 — unresolved problems** (prioritized research program). The standard of completion is that a reviewer can judge **mathematical coherence**, **literary support** (not proof of novelty), and **what must be validated empirically** before implementation.
 
 ---
 
@@ -142,7 +142,7 @@ In a research paper, **assumptions** are not hunches—they are **what we take a
 - **Learning** relationship edges from raw chat—only **policy shape** (tiers) is fixed.  
 - **UI copy** for “insufficient context” vs **clarifying questions**—product, not core math.
 
-**Remaining gaps to close later (tracked in §9 and implementation):**
+**Remaining gaps to close later** — **expanded in §13** (priorities, options, dependencies):
 
 | Gap | What is missing |
 |-----|-----------------|
@@ -341,12 +341,16 @@ Epistemic labels: **(P)** plausibly provable under explicit assumptions; **(E)**
 
 ## 9. Open Questions
 
+The **short** list below is the **index**; **§13** is the **full** treatment—priorities, risks, options, and dependencies.
+
 1. **Closed form for \(E\)** — What minimal sufficient statistics of \((m,s,a,\mathcal{P})\) are needed for **auditable** eligibility (regulatory / enterprise)?  
 2. **Sufficiency \(T\)** — Verifier model vs structural rules vs hybrid; **calibration** of \(\tau_T\).  
 3. **Decomposition** — Learned vs rule-based; error modes when decomposition is wrong.  
 4. **Multi-agent isolation** — Formal **non-interference** properties under concurrent writes.  
 5. **Optimality** — Under what loss is the knapsack greedy **within** constant factor (submodularity)?  
 6. **Interaction with LLM** — Does abstention at retrieval **reduce** hallucination measurably on **same** generator?
+
+**See §13** for expanded analysis.
 
 ---
 
@@ -444,6 +448,115 @@ Use this table to decide **what to integrate** (commodity) vs **what to build** 
 | 12 | **Evaluation** | Retrieval **k** / MRR / latency. | **+** cross-principal **leakage = 0** suites; **+** wrong-tier / wrong-env retrieval; **+** abstain when appropriate; **+** clarify usefulness. |
 
 **One-line thesis for the table:** Standard art gives **scoped IDs and filters**; GNOSIS adds **relationship-aware eligibility**—**who may see what of whom, under which tier**, for **self** and **other entities**—as the **default** memory policy, not an afterthought.
+
+---
+
+## 13. What we have not answered — research program (expanded)
+
+This section **closes the honesty gap**: the paper is **coherent** as a **specification**, but **many** choices require **research, data, or product** decisions. Each block: **what is open**, **why it matters**, **how to attack it**, **priority**.
+
+### 13.1 Eligibility \(E\): concrete definition and audit trail
+
+| | |
+|---|---|
+| **Open** | We name \(E\) and factors (tags, time, provenance, compatibility) but **not** a single **closed, minimal** formula for all deployments. **Enterprise / regulatory** settings need **explainable** “why excluded.” |
+| **Why it matters** | Without auditable \(E\), the system is **indistinguishable** from “we added filters”—and **cannot** defend a bad outcome. |
+| **Options** | (a) **Pure rules** + logged predicates per decision; (b) **hybrid**: rules **gate**, optional **score** inside eligible set with **SHAP**-style or rule-attributed explanations only for the **soft** part; (c) **learned** \(E\) only with **mandatory** human-reviewable training data—**high risk** for isolation. |
+| **Priority** | **P0** for any external-facing claim of “governed memory.” |
+| **Depends on** | Schema for \(m\); legal/compliance input on what must be **logged**. |
+
+### 13.2 Sufficiency \(T\) and thresholds \(\tau_E, \tau_T\)
+
+| | |
+|---|---|
+| **Open** | **\(T(\mathcal{O},q,s)\)** can be **max score**, **learned verifier**, **structural** (“required record classes present”), or **convex** combination—**not decided**. \(\tau_E, \tau_T\) fix **false abstain** vs **false ground** tradeoff—**domain-specific**. |
+| **Why it matters** | Wrong \(\tau\): either **hallucination** (too loose) or **useless** (too tight). **Clarify-on-weak** (perception check) needs a **band** between SUFF and hard INSUFF. |
+| **Options** | Start **structural + score floor**; collect **labels** (grounded / not / should clarify); **calibrate** \(\tau_T\) on dev; **cost-sensitive** learning if false grounding is expensive. |
+| **Priority** | **P0** for product; **P1** for pure research paper without deployment. |
+| **Depends on** | Labeled examples of **should answer** vs **should not** vs **should ask**. |
+
+### 13.3 Query decomposition: when, how, and failure recovery
+
+| | |
+|---|---|
+| **Open** | Trigger (length, structure, confidence?), **mechanism** (rules, small LM, big LM), **merge** strategy across branches, **behavior** when a split is **wrong** (missed joint constraint across sub-queries). |
+| **Why it matters** | Bad splits **lose** evidence that only **jointly** satisfies \(E\); good splits **reduce** token load (RLM-aligned). |
+| **Options** | **Conservative**: decompose only when **explicit** multi-part structure; **fallback**: if branch results **conflict** or \(\omega=\)INSUFF, **retry** with monolithic \(q\) under smaller \(B\); **evaluation**: ablation decomposition on/off. |
+| **Priority** | **P1** until mega-queries are core to the product. |
+| **Depends on** | Query distribution in real traffic. |
+
+### 13.4 Relationship data: where edges live (G4)
+
+| | |
+|---|---|
+| **Open** | **Graph** (explicit edges, queryable), **materialized** “relationship summary” rows per pair, or **derived** from episodic memory at query time—**not** fixed. |
+| **Why it matters** | **Latency** and **correctness** of tier checks; **staleness** when relationships change (“they no longer work together”). |
+| **Options** | **Write-through** events to graph on ingest; **periodic** reconciliation; **version** edges with valid intervals. |
+| **Priority** | **P0** if multi-agent collaboration is **ship-blocking**; else **P1**. |
+| **Depends on** | Product: who may **assert** “met / worked with”? |
+
+### 13.5 Empirical validation vs strong RAG (G3)
+
+| | |
+|---|---|
+| **Open** | **No** committed **dataset**, **baseline** configs, or **significance** targets in this document. |
+| **Why it matters** | Without **measurement**, claims stay **philosophical**. |
+| **Options** | **Synthetic** first (§10.3): injected wrong-geo, cross-partition leakage, **must-abstain** cases; then **small** human-labeled set; **A/B** same generator, different retrieval. |
+| **Priority** | **P0** for “paper + deck” credibility; **P2** for internal spec-only. |
+| **Depends on** | Engineering effort to run baselines B1–B4 (§10.1). |
+
+### 13.6 Multi-agent concurrency and non-interference
+
+| | |
+|---|---|
+| **Open** | Formal **non-interference** under **concurrent** writes (Alice ingests while Bob queries)—ordering, **serializability** of policy updates, **eventual** consistency of relationship graph. |
+| **Why it matters** | **Race** could briefly **expose** or **hide** memory incorrectly. |
+| **Options** | **Pessimistic** locking on partition; **version** vectors on policy; **prove** invariants under **simplified** concurrency model first. |
+| **Priority** | **P1** for multi-tenant production; **P2** for single-threaded lab. |
+
+### 13.7 Bounded selection: optimality and greedy vs optimal
+
+| | |
+|---|---|
+| **Open** | Knapsack is **NP-hard**; greedy is **not** always optimal; **submodular** structure may give guarantees—**not** fully analyzed for **GNOSIS** feature mix. |
+| **Why it matters** | **Wrong** pack under \(B\) drops **decisive** evidence. |
+| **Options** | Empirical **compare** greedy vs ILP on **small** \(\lvert\mathcal{M}^{(1)}\rvert\); **diversity** objectives (MMR) as extension. |
+| **Priority** | **P2** until budget pressure bites in production. |
+
+### 13.8 End-to-end: retrieval abstention vs LM hallucination
+
+| | |
+|---|---|
+| **Open** | Does **\(\omega=\)**INSUFF **at retrieval** reduce **ungrounded** generations **given the same** LM and prompt wrapper? **Interaction** with instruction-tuned models that **always** answer. |
+| **Why it matters** | If the LM **ignores** abstention flags, the **pipeline** is undermined. |
+| **Options** | **Contract** prompt: “use only \(\mathcal{O}\); if INSUFF, output fixed phrase”; **measure** groundedness with / without flag. |
+| **Priority** | **P1** for credibility of “honest memory.” |
+
+### 13.9 Cold start and incomplete metadata (A1 stress)
+
+| | |
+|---|---|
+| **Open** | Legacy corpora **without** tags/geo—**E** may **reject everything** or **degenerate** to similarity—**policy** for **backfill** vs **INSUFF**. |
+| **Why it matters** | **Adoption** blocker if every customer must **re-tag** everything. |
+| **Options** | **Weak supervision** to suggest tags; **conservative** INSUFF until confidence; **separate** “unstructured legacy” mode with **explicit** lower trust. |
+| **Priority** | **P1** for enterprise rollout. |
+
+### 13.10 Operations: latency, cost, and complexity
+
+| | |
+|---|---|
+| **Open** | Multi-stage pipeline (**filter → E → rank → pack**) vs **one** ANN call—**latency** and **$** budget; **when** GNOSIS is **worth** the overhead. |
+| **Why it matters** | Execs will ask **cost/latency** vs benefit. |
+| **Options** | **Cache** \(\mathcal{M}^{(1)}\) for repeated \(s\); **async** pre-index eligibility-feasible sets; **SLA** targets per tier. |
+| **Priority** | **P1** at scale; **P2** in research prototype. |
+
+### 13.11 Summary priority matrix
+
+| Priority | Topics |
+|----------|--------|
+| **P0** | Auditable \(E\); calibrated \(T\) / thresholds for deployment; **empirical** synthetic suite; relationship storage if collaboration ships |
+| **P1** | Decomposition strategy; concurrency model; E2E LM study; cold-start metadata; ops latency/cost |
+| **P2** | Knapsack optimality theory; decomposition until mega-queries matter |
 
 ---
 
