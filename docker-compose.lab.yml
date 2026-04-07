@@ -1,0 +1,23 @@
+# Test lab / staging overrides — same images and topology as docker-compose.yml.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.lab.yml up -d
+#
+# Tune resource limits and env for your lab; inject secrets via CI or a vault, not this file.
+
+services:
+  app:
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    # deploy.resources is honored in Swarm; ignored by plain compose — kept as documentation.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  db:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M

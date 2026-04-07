@@ -1,0 +1,49 @@
+# GNOSIS stack — everything that can run in Docker runs here (dev + lab parity).
+# Copy .env.example to .env and adjust. Lab overrides: docker-compose.lab.yml
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gnosis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gnosis}
+      POSTGRES_DB: ${POSTGRES_DB:-gnosis}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gnosis -d gnosis"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://gnosis:gnosis@db:5432/gnosis}
+      REDIS_URL: ${REDIS_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    profiles:
+      - with-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: gnosis_net

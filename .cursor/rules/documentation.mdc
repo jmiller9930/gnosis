@@ -1,0 +1,29 @@
+---
+description: Prevent documentation sprawl; keep narrative in architecture overview unless an exception is required.
+alwaysApply: true
+---
+
+# Documentation — no document creep
+
+## Hard rule
+
+Do **not** create new `*.md` files for routine topics, features, or brainstorming. **Document creep is forbidden.**
+
+## Where content goes
+
+1. **Default:** Add or edit sections in `docs/architecture/overview.md` — it is the **hub** for product and architecture narrative.
+2. **Allowed without treating as “new doc creep”:**
+   - `README.md` (repo entry, onboarding pointers).
+   - `docs/specs/*` — normative specifications (canonical spec, versioned specs).
+3. **Rare exception:** A subject **absolutely** requires a separate file (e.g. compliance appendix, very long integration guide). Then:
+   - Create **one** minimal file under `docs/specs/` or `docs/architecture/` as appropriate.
+   - **Link it from `docs/architecture/overview.md`** in a short subsection so nothing is orphaned.
+
+## Do not
+
+- Add `docs/foo.md`, `NOTES.md`, `ADR-001-*.md`, or parallel “overview” files without explicit need.
+- Duplicate the same story in multiple markdown files.
+
+## When editing docs
+
+Prefer **append or tighten** `docs/architecture/overview.md` over creating a new document.
