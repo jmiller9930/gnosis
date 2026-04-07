@@ -316,6 +316,26 @@ Epistemic labels: **(P)** plausibly provable under explicit assumptions; **(E)**
 
 ---
 
+## 11. Design decisions log
+
+Decisions are **locked** here as they are agreed in the design process; the full algorithm pass will **instantiate** them in §4–5.
+
+### Decision 1 — Isolation, partitions, and sharing (**LOCKED**)
+
+- **Why silo:** Partitions exist first so retrieval stays **tractable**—smaller candidate sets, not one undifferentiated global blob. Strong isolation for **tenancy/safety** is compatible but **not** the only reason to partition.
+- **No silent global merge:** Memory stays **owned / partitioned**; any **union** of partitions for a query is **explicit** in policy and **bounded**.
+- **Sharing mechanism:** **Governed** cross-context via (a) **visibility** on each memory (e.g. private to agent vs visible to scope \(T\)), and (b) **relationship-tier** predicates between principals before widening the partition union.
+- **Relationship tiers (low → high):**
+  - **L0 — Awareness:** *Does Anna know about Bill?* — weakest tier; minimal cross-context (e.g. reference / directory-level facts), not implied private shared history.
+  - **L1 — Contact:** *Has Anna met Bill?*
+  - **L2 — Collaboration:** *Has Anna worked with Bill?*
+  - **L3+ — Entrusted:** Explicit shared team / project / vault created under policy.
+- **Read rule (summary):** A memory is **eligible** only if the **requesting situation** satisfies **identity + active scopes + relationship tier** required for that memory’s **visibility class** (higher tiers unlock richer joint retrieval, not “everything”).
+
+**Open implementation detail (not blocking Decision 1):** whether relationship facts live in a **graph**, **materialized** summaries, or **derived** from retrieval is a later engineering choice; the **policy shape** above is fixed.
+
+---
+
 ## Document control
 
 | Item | Note |
