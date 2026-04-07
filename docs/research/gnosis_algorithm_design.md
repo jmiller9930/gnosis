@@ -10,7 +10,7 @@
 
 GNOSIS is specified here as a **composite retrieval-and-decision procedure**: a **qualification layer** (eligibility, scope, isolation) applied **before** similarity-based ranking, followed by **bounded selection** under a finite context budget, **sufficiency** assessment, and an **answer vs abstain** outcome. The procedure is **not** claimed to exist as a single named algorithm in the literature; it is a **composition** of established ideas (multi-stage retrieval, selective prediction, constrained selection) plus an explicit **admissibility-first** ordering that matches the GNOSIS thesis.
 
-This document supplies: a **problem definition**, **formal inputs/outputs**, **assumptions**, an **ordered algorithm**, **mathematical formulation**, **research mapping**, **counterexamples**, **theorem-style claims** (with epistemic status), **open questions**, an **evaluation blueprint**, and **§13 — unresolved problems** (prioritized research program). The standard of completion is that a reviewer can judge **mathematical coherence**, **literary support** (not proof of novelty), and **what must be validated empirically** before implementation.
+This document supplies: a **problem definition**, **formal inputs/outputs**, **assumptions**, an **ordered algorithm**, **mathematical formulation**, **research mapping**, **counterexamples**, **theorem-style claims** (with epistemic status), **open questions**, an **evaluation blueprint**, **§13 — unresolved problems**, and **§14 — v0 default resolutions** to **finalize** the spec on paper. The standard of completion is that a reviewer can judge **mathematical coherence**, **literary support** (not proof of novelty), and **what must be validated empirically** before implementation.
 
 ---
 
@@ -455,6 +455,8 @@ Use this table to decide **what to integrate** (commodity) vs **what to build** 
 
 This section **closes the honesty gap**: the paper is **coherent** as a **specification**, but **many** choices require **research, data, or product** decisions. Each block: **what is open**, **why it matters**, **how to attack it**, **priority**.
 
+**Basic answers to finalize the algorithm on paper** are in **§14 (v0 defaults)**—read §13 for **rationale and risk**, §14 for **concrete choices**.
+
 ### 13.1 Eligibility \(E\): concrete definition and audit trail
 
 | | |
@@ -557,6 +559,105 @@ This section **closes the honesty gap**: the paper is **coherent** as a **specif
 | **P0** | Auditable \(E\); calibrated \(T\) / thresholds for deployment; **empirical** synthetic suite; relationship storage if collaboration ships |
 | **P1** | Decomposition strategy; concurrency model; E2E LM study; cold-start metadata; ops latency/cost |
 | **P2** | Knapsack optimality theory; decomposition until mega-queries matter |
+
+---
+
+## 14. Algorithm v0 — default resolutions (finalize the spec)
+
+§13 lists **what was open**. This section gives **basic, paper-final answers** so the composite procedure is **fully instantiable** for a first version. **Every value here is a default**—replace when evidence or product requires it.
+
+### 14.1 Eligibility \(E\) — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Form** | **Rule-first Boolean gates**, then optional **scalar** \(E \in [0,1]\) **only** for ordering inside the eligible set (aligns with canonical §10 weights if using scored form). |
+| **Hard vetoes (always false)** | `compatibility_ok` false; isolation fails; visibility requires tier **>** granted relationship tier; geo/time mismatch when situation **requires** match. |
+| **Audit** | Persist **structured log**: for each \((m,q)\) candidate, **which predicate failed** or **pass**—enough for **human** and **regulatory** review without ML explainability. |
+| **Learned \(E\)** | **Out of v0**—add only with labeled data and **shadow** mode. |
+
+### 14.2 Sufficiency \(T\) and thresholds — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **\(T(\mathcal{O},q,s)\)** | If \(\mathcal{O}=\emptyset\) → \(T=0\). Else \(T = \max_{m \in \mathcal{O}} \tilde{S}(m,q,s)\) (same blend as §5.3 / canonical §12). **Optional** AND with structural checks: e.g. “must have ≥1 memory with `class=restaurant`” for restaurant queries—**product toggle**. |
+| **\(\tau_E\)** | **0.50** (canonical default). |
+| **\(\tau_T\)** | **0.50** **start**—same order of magnitude as \(\tau_E\); **tune** on dev set (§13.2). |
+| **Weak / clarify band** | If \(T \in [0.35,\ \tau_T)\) **and** \(\mathcal{O} \neq \emptyset\): emit **`CLARIFY_RECOMMENDED`** (downstream **may** ask one focused question). If \(T < 0.35\) or empty → **`INSUFF`** without clarify. **Numbers** are **starting points**. |
+
+### 14.3 Query decomposition — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Default** | **Off**—single \(q\). |
+| **Turn on when** | Query length **>** **512** characters **or** explicit **multi-sentence list** / delimiter pattern (e.g. numbered items)—**regex/heuristic**, not LLM in v0. |
+| **Merge** | Union of per-branch \(\mathcal{O}_i\), **dedupe** by `memory_id`, **re-apply** global knapsack under \(B\). |
+| **Failure** | If decomposition yields **empty** \(\mathcal{O}\) for all branches, **optional single retry** with **monolithic** \(q\) and **half** budget (documented fallback). |
+
+### 14.4 Relationship storage — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Store** | **Relational table** `relationships(principal_a, principal_b, tier, valid_from, valid_to, provenance)` with **unique** active row per ordered pair (or **unordered** with canonical ordering rule). **No** graph DB **required** in v0. |
+| **Read path** | Situation supplies \((a,\ \text{other principals},\ \text{required tier})\); **SQL join** to authorize partition **union**. |
+| **Staleness** | **Close** edge with `valid_to` when relationship ends; queries use **`now`** in range. |
+
+### 14.5 Empirical validation — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Before “algorithm finalized”** | Run **synthetic** suite (§10.3): **leakage** cases, **wrong-geo**, **must-abstain**. **Gate:** **zero** leakage on constructed cross-partition tests. |
+| **Baselines** | At minimum **B2** (RAG) vs **B4** (full GNOSIS) on same generator for **one** task (e.g. grounded QA). |
+
+### 14.6 Concurrency — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Model** | **Serialize** writes **per** `partition_key` (agent / tenant), or **row-version** check on policy read—**pick one** in implementation; **read** queries use **snapshot** isolation acceptable for v0. |
+| **Goal** | No **cross-partition** race that **temporarily** exposes wrong memory—**prove** informally in test plan. |
+
+### 14.7 Bounded selection — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Algorithm** | **Greedy**: sort \(\mathcal{M}^{(1)}\) by \(\tilde{S}\) descending, **pack** until \(B\) exhausted. |
+| **Diversity** | **Not** in v0 unless **ablation** shows redundancy harm—**MMR** = v1. |
+
+### 14.8 LM / generator contract — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **When \(\omega=\textsf{SUFF}\)** | Prompt **must** restrict **grounded** claims to content **derivable** from \(\mathcal{O}\) (template language in product). |
+| **When \(\omega=\textsf{INSUFF}\)** | Prompt **must** **forbid** inventing memory-backed facts; **allow** one **clarifying** question **or** explicit insufficient-context message—**product string**. |
+| **When `CLARIFY_RECOMMENDED`** | Prompt **may** ask **one** narrowing question **before** final answer. |
+
+### 14.9 Cold start / incomplete metadata — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Missing fields** for a **required** predicate | Treat predicate as **failed** → \(m\) **ineligible** (conservative). |
+| **Bulk legacy** | **Optional** pipeline: suggest tags with **low confidence** → human review; **not** blocking **algorithm** definition. |
+| **Outcome** | Expect **more** \(\textsf{INSUFF}\) until metadata quality improves—**acceptable** for v0 honesty. |
+
+### 14.10 Operations — v0
+
+| Decision | **v0 default** |
+|----------|----------------|
+| **Latency** | Target **p95** **≤ 500 ms** for retrieval subgraph in lab (excluding cold model); **measure** before scale claims. |
+| **Cache** | **Cache** resolved \(\mathcal{P}\) and **relationship** lookups per tenant **≤ 5 min** TTL; **invalidate** on policy change. |
+
+### 14.11 v0 parameter summary (single place)
+
+| Parameter | v0 value |
+|-----------|----------|
+| \(\tau_E\) | 0.50 |
+| \(\tau_T\) | 0.50 (tune) |
+| Clarify band lower | 0.35 |
+| Decomposition threshold | 512 chars or heuristic multi-part |
+| Knapsack | Greedy |
+| Relationship store | SQL table |
+| Learned \(E\) | No |
+
+**§4–§5** of this document should be read as **instantiated** by §14 for **v0**; conflicting **informal** text defers to **§14** until revised.
 
 ---
 
