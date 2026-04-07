@@ -336,6 +336,31 @@ Decisions are **locked** here as they are agreed in the design process; the full
 
 ---
 
+## 12. Standard vs GNOSIS — full development track (row-by-row)
+
+Use this table to decide **what to integrate** (commodity) vs **what to build** (art). **`user_id` / `project_id` are fine**—they stay. The **differentiator** is **relationships between principals** (and to other entities) as **first-class policy**, not flat IDs alone.
+
+**Legend — “Standard”** means a **typical strong RAG** stack (filters + vectors + LLM). **“Gap”** = what that stack **rarely offers as a unified, default contract** (may exist ad hoc in mature systems).
+
+| # | Topic | Standard / strong RAG | GNOSIS |
+|---|--------|------------------------|--------|
+| 1 | **Identity primitives** | `user_id`, `project_id`, `org_id`, API keys—**scoped** data. | **Same** primitives; **no** need to replace them. |
+| 2 | **Relationship to *self*** | Continuity inside one user/project via **session + store**; **no** special “self graph” unless custom. | Same **self** partition; **fingerprint** ties turns to **one** coherent situation for that principal. |
+| 3 | **Relationship between principals (A ↔ B)** | **Flat isolation:** A’s data vs B’s data; **optional** shared tables or manual joins—**no** default **tiered** “knows about / met / worked with” in RAG products. **Gap.** | **First-class:** relationship **tiers** (L0–L3+) **govern** how much of B’s (or joint) memory may enter A’s retrieval **for this situation**—**before** similarity. |
+| 4 | **Relationship to *other* entities** | Tags, folders, `source_id`—**sometimes**; **rarely** a single **policy model** linking people ↔ teams ↔ customers ↔ env (prod/QA). **Gap** as unified story. | **Visibility** on each memory: private \| team \| project \| org; **edges** to **team**, **customer**, **environment** as **eligibility** inputs, not only strings in text. |
+| 5 | **Default isolation** | Tenant/user filter—**good**; often **only** that. | **Default narrow blob** + **explicit** union when relationship + situation **allow**. |
+| 6 | **Cross-context** | **Ad hoc** (shared DB, copy-paste, “memory on” features)—**risky** or **thin**. | **Governed:** only **declared** scopes + **tier** satisfied—**no** silent merge. |
+| 7 | **Eligibility \(E\)** | Filters / slots—**often** present in good systems; **not always** named or mandatory. | **Mandatory step** in contract: **policy + situation** before similarity **dominates**. |
+| 8 | **Similarity \(S\)** | Core of retrieval—**embed → top‑k**. | **Inside** eligible set **only**; **not** the admission gate. |
+| 9 | **Insufficiency / abstain** | Model may **still answer**; “no results” ≠ **grounded abstention**. **Gap** as product contract. | **Explicit** insufficient-context outcome; **no** fake grounding from weak retrieval. |
+| 10 | **Weak evidence** | Hedging or **hallucination**. | **Perception check:** **clarify** to fix situation/query, **then** re-retrieve—**optional** branch per UX. |
+| 11 | **Output** | Chunks → prompt. | **Bounded packet** + support/challenge / insufficiency semantics (per spec). |
+| 12 | **Evaluation** | Retrieval **k** / MRR / latency. | **+** cross-principal **leakage = 0** suites; **+** wrong-tier / wrong-env retrieval; **+** abstain when appropriate; **+** clarify usefulness. |
+
+**One-line thesis for the table:** Standard art gives **scoped IDs and filters**; GNOSIS adds **relationship-aware eligibility**—**who may see what of whom, under which tier**, for **self** and **other entities**—as the **default** memory policy, not an afterthought.
+
+---
+
 ## Document control
 
 | Item | Note |
