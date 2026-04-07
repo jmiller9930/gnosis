@@ -340,7 +340,28 @@ Decisions are **locked** here as they are agreed in the design process; the full
 
 Use this table to decide **what to integrate** (commodity) vs **what to build** (art). **`user_id` / `project_id` are fine**—they stay. The **differentiator** is **relationships between principals** (and to other entities) as **first-class policy**, not flat IDs alone.
 
-**Legend — “Standard”** means a **typical strong RAG** stack (filters + vectors + LLM). **“Gap”** = what that stack **rarely offers as a unified, default contract** (may exist ad hoc in mature systems).
+### 12.1 Standard RAG vs GNOSIS context stack (single table — exec + dev)
+
+**Standard RAG** = typical retrieve-then-generate stack (filters + embeddings + model). **GNOSIS context stack** = commodity runtime/data **plus** the **qualification layer** (eligibility, relationships, bounds, insufficiency) defined in this document.
+
+| Topic | Standard RAG | GNOSIS context stack |
+|-------|----------------|----------------------|
+| **Accounts & projects** | User and project **scopes** so data isn’t one global pile—normal practice. | **Same**—we **reuse** standard scoping. Differentiation is **not** “new login.” |
+| **Continuity for one person/agent** | Chat history + search over **their** content—**session continuity**. | Same **self** scope, plus a **clear “situation”** each turn so retrieval matches **this** moment, not only “similar text.” |
+| **Two people / two agents working together** | Usually **separate silos** or **messy** shared features—**no** default **relationship rules** (met? worked together? how much can we share?). | **Relationship tiers** (awareness → contact → collaboration → entrusted) **decide** how much shared context is **allowed**—so **teams of agents** can cooperate **safely**. |
+| **Teams, customers, prod vs QA, etc.** | Tags and folders—**sometimes**; often **inconsistent**. | **Visibility** and **policy**: which **kind** of record can be used **in which** environment or for **which** customer—**before** “sounds similar.” |
+| **Default behavior** | “**Your** data” filtered—good baseline. | **Start small** (narrow memory); **widen** **only** when **policy + relationship** say it’s OK. |
+| **Sharing across threads or agents** | **Ad hoc**—copy/paste, “memory on,” or **vague** cross-chat—**risk** of wrong or creepy context. | **Governed sharing**—**no** silent merge; **explicit** rules. |
+| **What counts as “allowed” before ranking** | Filters when engineers add them—**not always** the **center** of the product story. | **Eligibility first**—**mandatory**: *may* this memory apply **here**, for **this** relationship and scope? |
+| **Similarity / “closest match”** | **Main** retrieval signal—embeddings, top results. | **Second**—only **among** what already passed eligibility—**similar** ≠ **allowed**. |
+| **When evidence isn’t there** | Model often **still answers**—sounds fluent, may be **wrong**. | **Insufficient context** is valid—**don’t** pretend memory **grounds** the answer. |
+| **When evidence is weak** | Hedge or **guess**. | **Clarify** (ask a focused question) **or** abstain—**perception check**, not bluffing. |
+| **What gets sent downstream** | Text **chunks** in the prompt. | **Bounded** **context packet** + rules for **honest** outcomes (per product spec). |
+| **How we measure success** | Search quality, speed. | **Plus**: **no** wrong-person leakage, **no** wrong-environment use, **good** abstention and **good** clarify when appropriate. |
+
+### 12.2 Technical row-by-row (same content, engineering labels)
+
+**Legend:** **Standard / strong RAG** = filters + vectors + LLM. **Gap** = rarely a **unified default contract** (may exist ad hoc in mature systems).
 
 | # | Topic | Standard / strong RAG | GNOSIS |
 |---|--------|------------------------|--------|
